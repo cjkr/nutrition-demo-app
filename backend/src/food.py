@@ -1,5 +1,6 @@
 from datetime import date, timedelta
 from flask import Blueprint, request
+import dateutil.parser as dt
 from flask_jwt_extended import get_jwt_identity, jwt_required
 from sqlalchemy import func
 
@@ -27,7 +28,7 @@ def handle_foods():
 
         food = Food(
             name=name,
-            food_date=food_date,
+            food_date=dt.parse(food_date),
             calories=calories,
             user_id=current_user,
         )
@@ -83,8 +84,8 @@ def get_food(id):
     }, HTTP_200_OK
 
 
-@foods.put("<int:id>")
-@foods.patch("<int:id>")
+@foods.put("/<int:id>")
+@foods.patch("/<int:id>")
 @jwt_required()
 def update_food(id):
     current_user = get_jwt_identity()
@@ -99,7 +100,7 @@ def update_food(id):
         return {"error": "Item not found"}, HTTP_404_NOT_FOUND
 
     food.name = name
-    food.food_date = food_date
+    food.food_date = dt.parse(food_date)
     food.calories = calories
 
     db.session.commit()

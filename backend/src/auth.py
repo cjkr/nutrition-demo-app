@@ -77,8 +77,10 @@ def login():
                     "refresh": refresh,
                     "username": user.username,
                     "email": user.email,
+                    "id": user.id,
+                    "calorie_limit": user.calorie_limit,
                 }
-            }
+            }, HTTP_200_OK
 
         return {"error": "Wrong credentials"}, HTTP_401_UNAUTHORIZED
 
