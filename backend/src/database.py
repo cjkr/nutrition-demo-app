@@ -17,7 +17,7 @@ class User(db.Model):
     foods = db.relationship("Food", backref="user")
 
     def __repr__(self) -> str:
-        return "User>>> {self.username}"
+        return f"User>>> {self.username}"
 
 
 class Food(db.Model):
@@ -30,4 +30,4 @@ class Food(db.Model):
     updated_at = db.Column(db.DateTime, onupdate=datetime.now())
 
     def __repr__(self) -> str:
-        return "Food>>> {self.name}"
+        return f"Food>>> {self.name}"

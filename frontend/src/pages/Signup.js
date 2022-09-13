@@ -1,14 +1,25 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, Navigate } from "react-router-dom";
+import { register } from "../actions/auth";
 
 export default function Signup() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const { isLoggedIn } = useSelector((state) => state.auth);
+  const dispatch = useDispatch();
+
   const handleSignup = (e) => {
     e.preventDefault();
+
+    dispatch(register(username, email, password));
   };
+
+  if (isLoggedIn) {
+    return <Navigate to="/main" />;
+  }
 
   return (
     <div className="auth-container">
@@ -18,6 +29,7 @@ export default function Signup() {
           <div className="form-group">
             <label htmlFor="username">Username</label>
             <input
+              value={username}
               type="username"
               name="username"
               id="username"
@@ -29,6 +41,7 @@ export default function Signup() {
           <div className="form-group">
             <label htmlFor="Email">Email</label>
             <input
+              value={email}
               type="email"
               name="email"
               id="email"
@@ -40,6 +53,7 @@ export default function Signup() {
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
+              value={password}
               type="password"
               name="password"
               id="password"

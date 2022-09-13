@@ -31,11 +31,20 @@ const me = () => {
   return axios.get(API_URL + "me", { headers: authHeader() });
 };
 
+const invite = (username, email) => {
+  return axios.post(
+    API_URL + "invite_friend",
+    { username, email },
+    { headers: authHeader(), withCredentials: false }
+  );
+};
+
 const Authservice = {
   register,
   login,
   logout,
   me,
+  invite,
 };
 
 export default Authservice;

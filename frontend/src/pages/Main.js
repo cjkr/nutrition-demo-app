@@ -2,44 +2,25 @@ import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { logout } from "../actions/auth";
 import { useDispatch, useSelector } from "react-redux";
-import Authservice from "../services/auth.service";
 import FoodService from "../services/food.service";
+import Regular from "./Regular";
+import Admin from "./Admin";
+import Button from "react-bootstrap/Button";
+import Modal from "react-bootstrap/Modal";
+import Form from "react-bootstrap/Form";
+import Authservice from "../services/auth.service";
 
 export default function Main() {
   const [user, setUser] = useState({});
-  const username = useRef("");
-
-  const [foodName, setFoodName] = useState("");
-  const [foodDate, setFoodDate] = useState(
-    new Date(new Date().getTime() - new Date().getTimezoneOffset() * 60000)
-      .toISOString()
-      .substring(0, 16)
-  );
-  const [calories, setCalories] = useState("");
-
-  const [foodList, setFoodList] = useState([]);
-
-  const [calorieSum, setCalorieSum] = useState(0);
+  const [showAdminPage, setShowAdminPage] = useState(false);
+  const [show, setShow] = useState(false);
+  const [friendName, setFriendName] = useState("");
+  const [friendEmail, setFriendEmail] = useState("");
 
   useEffect(() => {
     const u = JSON.parse(localStorage.getItem("user"));
     setUser(u);
-
-    FoodService.getFoods()
-      .then((result) => {
-        setFoodList([...result.data.data]);
-        setCalorieSum(() =>
-          foodList.reduce((acc, curr) => acc + curr.calories, 0)
-        );
-      })
-      .catch((err) => {});
-
-    if (u) {
-      username.current = u.username;
-    }
   }, []);
-
-  useEffect(() => {}, []);
 
   const dispatch = useDispatch();
 
@@ -47,30 +28,101 @@ export default function Main() {
     dispatch(logout());
   };
 
-  function addUserFood(e) {
-    e.preventDefault();
+  const handleClose = () => setShow(false);
+  const handleInviteShow = () => setShow(true);
 
-    console.log(foodName, foodDate, calories);
-
-    FoodService.addFood(foodName, foodDate, calories)
+  const handleInvite = () => {
+    Authservice.invite(friendName, friendEmail)
       .then((result) => {
-        setFoodList((l) => [...l, result.data]);
-        setFoodName("");
-        setFoodDate("");
-        setCalories(0);
+        console.log(result.data);
       })
       .catch((err) => {
-        console.log(err);
+        console.error(err);
       });
-  }
+
+    setShow(false);
+  };
 
   return (
     <div>
+      <Modal show={show} onHide={handleClose}>
+        <Modal.Header closeButton>
+          <Modal.Title>Invite a Friend</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3" controlId="formBasicName">
+              <Form.Label>Name</Form.Label>
+              <Form.Control
+                type="name"
+                placeholder="Enter friend's name"
+                onChange={(e) => setFriendName(e.target.value)}
+              />
+              <Form.Text className="text-muted">
+                Share the love of using this awesome app!
+              </Form.Text>
+            </Form.Group>
+
+            <Form.Group className="mb-3" controlId="formBasicEmail">
+              <Form.Label>Email</Form.Label>
+              <Form.Control
+                type="email"
+                placeholder="Enter friend's email"
+                onChange={(e) => setFriendEmail(e.target.value)}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={handleClose}>
+            Close
+          </Button>
+          <Button variant="primary" onClick={handleInvite}>
+            Save Changes
+          </Button>
+        </Modal.Footer>
+      </Modal>
       <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
         <div className="navbar-nav me-auto ms-5">
           <div className="nav-item navbar-brand">FOOD REPO</div>
+          {user.is_admin && (
+            <div className="d-flex flex-row">
+              <li className="nav-item">
+                <a
+                  href=""
+                  className="nav-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowAdminPage(false);
+                  }}
+                >
+                  HOME
+                </a>
+              </li>
+              <li className="nav-item">
+                <a
+                  href=""
+                  className="nav-link"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setShowAdminPage(true);
+                  }}
+                >
+                  ADMIN PAGE
+                </a>
+              </li>
+            </div>
+          )}
         </div>
         <div className="navbar-nav ms-auto me-5">
+          <li className="nav-item">
+            <button
+              className="btn btn-secondary me-3"
+              onClick={handleInviteShow}
+            >
+              Invite a Friend
+            </button>
+          </li>
           <li className="nav-item">
             <Link to="/login" className="nav-link" onClick={logOut}>
               Log Out
@@ -78,79 +130,7 @@ export default function Main() {
           </li>
         </div>
       </nav>
-      <div className="display-6 text-center pt-3 pb-4">
-        {user && `Hi ${user.username} 🙂`}
-      </div>
-      <div className="fs-4 text-uppercase fw-light text-center pb-3">
-        <p
-          className={
-            calorieSum <= user.calorie_limit ? "text-success" : "text-danger"
-          }
-        >{`CALORIES: ${calorieSum}`}</p>
-        <p>{user && `CALORIE LIMIT: ${user.calorie_limit}`}</p>
-      </div>
-      <div className="d-flex">
-        <div className="mx-auto main-content">
-          <div className="auth-content">
-            <form className="d-flex flex-row justify-content-between gap-3">
-              <div className="">
-                <input
-                  value={foodName}
-                  className="form-control fs-4 fw-light"
-                  type="text"
-                  name="name"
-                  id="name"
-                  onChange={(e) => setFoodName(e.target.value)}
-                  placeholder="Food name"
-                />
-              </div>
-              <div className="">
-                <input
-                  value={calories}
-                  className="form-control fs-4"
-                  type="number"
-                  name="calories"
-                  id="calories"
-                  onChange={(e) => setCalories(e.target.value)}
-                  placeholder="Calories"
-                />
-              </div>
-              <div className="">
-                <input
-                  value={foodDate}
-                  className="form-control fs-4"
-                  type="datetime-local"
-                  name="food_date"
-                  id="food_date"
-                  onChange={(e) => setFoodDate(e.target.value)}
-                />
-              </div>
-              <div className="">
-                <button
-                  className="btn btn-primary btn-block btn-lg"
-                  type="submit"
-                  onClick={addUserFood}
-                >
-                  Submit
-                </button>
-              </div>
-            </form>
-
-            <div className="mt-5">
-              {foodList.map((food) => (
-                <div
-                  className="d-flex flex-row justify-content-between"
-                  key={food.id}
-                >
-                  <p className="fs-4 fw-light col ">{food.name}</p>
-                  <p className="fs-5 col text-end">{food.calories} calories</p>
-                  <p className="col-5 fw-bold text-end">{food.food_date}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      {showAdminPage ? <Admin /> : <Regular />}
     </div>
   );
 }

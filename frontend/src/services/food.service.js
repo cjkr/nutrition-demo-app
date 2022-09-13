@@ -34,12 +34,28 @@ const deleteFood = (id) => {
   return axios.delete(API_URL + id, { headers: authHeader() });
 };
 
+const getStats = () => {
+  return axios.get(API_URL + "stats", {
+    headers: authHeader(),
+    withCredentials: false,
+  });
+};
+
+const adminDeleteFood = (id) => {
+  return axios.delete(API_URL + "admin/" + id, {
+    headers: authHeader(),
+    withCredentials: false,
+  });
+};
+
 const FoodService = {
   getFoods,
   getFood,
   addFood,
   updateFood,
   deleteFood,
+  getStats,
+  adminDeleteFood,
 };
 
 export default FoodService;

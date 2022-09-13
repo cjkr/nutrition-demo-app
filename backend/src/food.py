@@ -2,7 +2,7 @@ from datetime import date, timedelta
 from flask import Blueprint, request
 import dateutil.parser as dt
 from flask_jwt_extended import get_jwt_identity, jwt_required
-from sqlalchemy import func
+from sqlalchemy import func, asc
 
 from src.constants.http_status_codes import (
     HTTP_200_OK,
@@ -144,14 +144,57 @@ def admin_stats():
     if not user.is_admin:
         return {"error": "User not authorized"}, HTTP_401_UNAUTHORIZED
 
+    all_data = Food.query.order_by(asc(Food.user_id)).all()
+
+    food_data = []
+
+    for food in all_data:
+        food_data.append(
+            {
+                "user": User.query.filter_by(id=food.user_id).first().username,
+                "name": food.name,
+                "food_date": food.food_date,
+                "calories": food.calories,
+                "food_id": food.id,
+            }
+        )
+
     recent_week_entries = Food.query.filter(
         func.date(Food.food_date) >= date.today() - timedelta(weeks=1)
     ).all()
 
+    recent_entries = []
+
+    for food in recent_week_entries:
+        recent_entries.append(
+            {
+                "id": food.id,
+                "name": food.name,
+                "food_date": food.food_date,
+                "calories": food.calories,
+                "created_at": food.created_at,
+                "updated_at": food.updated_at,
+            }
+        )
+
     past_week_entries = Food.query.filter(
-        func.date(Food.food_date) < date.today() - timedelta(weeks=1)
-        and func.date(Food.food_date) >= date.today() - timedelta(weeks=2)
+        func.date(Food.food_date) < date.today() - timedelta(weeks=1),
+        func.date(Food.food_date) >= date.today() - timedelta(weeks=2),
     ).all()
+
+    past_entries = []
+
+    for food in past_week_entries:
+        past_entries.append(
+            {
+                "id": food.id,
+                "name": food.name,
+                "food_date": food.food_date,
+                "calories": food.calories,
+                "created_at": food.created_at,
+                "updated_at": food.updated_at,
+            }
+        )
 
     avg_cals_query = (
         db.session.query(Food.user_id, func.avg(Food.calories))
@@ -173,7 +216,32 @@ def admin_stats():
         )
 
     return {
-        "recent_week": len(recent_week_entries),
-        "past_week": len(past_week_entries),
+        "recent_week": recent_entries,
+        "past_week": past_entries,
         "avg_cals": avg_cals,
+        "food_data": food_data,
     }
+
+
+@foods.delete("/admin/<int:id>")
+@jwt_required()
+def admin_delete_food(id):
+    current_user = get_jwt_identity()
+
+    user = User.query.filter_by(id=current_user).first()
+
+    if not user:
+        return {"error": "User not found"}, HTTP_404_NOT_FOUND
+
+    if not user.is_admin:
+        return {"error": "User not authorized"}, HTTP_401_UNAUTHORIZED
+
+    food = Food.query.filter_by(id=id).first()
+
+    if not food:
+        return {"error": "Item not found"}, HTTP_404_NOT_FOUND
+
+    db.session.delete(food)
+    db.session.commit()
+
+    return {"message": "Successfully deleted food"}, HTTP_204_NO_CONTENT
